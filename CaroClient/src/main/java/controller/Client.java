@@ -5,8 +5,8 @@
 package controller;
 
 import javax.swing.UIManager;
-import model.Point;
-import model.User;
+import Model.Point;
+import Model.User;
 
 /**
  *
@@ -18,7 +18,7 @@ public class Client {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
         } catch(Exception e) { /* ignore */ }
         java.awt.EventQueue.invokeLater(() -> {
-            new view.LoginFrm().setVisible(true);
+            new View.LoginFrm().setVisible(true);
         });
     }
 }
