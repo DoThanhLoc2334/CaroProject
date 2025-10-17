@@ -6,3 +6,14 @@ View\GameFrame.class
 View\LoginFrame.class
 View\RegisterFrame.class
 View\RegisterFrame$2.class
+controller\SocketHandle.class
+view\LoginFrm$1.class
+view\HomePageFrm.class
+view\GameClientFrm.class
+view\HomePageFrm$2.class
+model\Point.class
+view\HomePageFrm$1.class
+view\LoginFrm.class
+controller\Client.class
+model\XOButton.class
+model\User.class
