@@ -6,10 +6,8 @@ Model\XOButton.class
 View\RegisterFrame.class
 View\HomePageFrm$1.class
 View\HomePageFrm$2.class
-View\RegisterFrame$2.class
 Controller\ClientHandler.class
 Model\User.class
-View\RegisterFrame$1.class
 View\GameFrame.class
 View\LoginFrame.class
 View\HomePageFrm.class

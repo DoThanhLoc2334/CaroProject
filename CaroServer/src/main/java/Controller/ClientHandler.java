@@ -27,7 +27,7 @@ public class ClientHandler implements Runnable {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
-            out.println("Welcome to Caro Server!");
+//            out.println("Welcome to Caro Server!");
             String line;
             while ((line = in.readLine()) != null) {
                 handleMessage(line);

@@ -1,21 +1,20 @@
 package View;
 
-import Controller.ClientHandler;
+import Controller.SocketHandle;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.IOException;
 
 public class RegisterFrame extends JFrame {
 
     private JTextField txtUsername;
     private JPasswordField txtPassword;
-    private JButton btnRegister;
-    private JButton btnBack;
-    private ClientHandler clientHandler;
+    private JButton btnRegister, btnBack;
+    private SocketHandle socketHandle;
 
-    public RegisterFrame(ClientHandler clientHandler) {
-        this.clientHandler = clientHandler;
+    public RegisterFrame(SocketHandle socketHandle) {
+        this.socketHandle = socketHandle;
         initComponents();
     }
 
@@ -37,7 +36,6 @@ public class RegisterFrame extends JFrame {
         btnRegister = new JButton("Register");
         btnBack = new JButton("Back");
 
-        // Layout
         JPanel panel = new JPanel(new GridLayout(5, 1, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
@@ -54,65 +52,59 @@ public class RegisterFrame extends JFrame {
         add(panel, BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
-        // Sự kiện nút Register
-        btnRegister.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onRegister();
-            }
-        });
-
-        // Sự kiện nút Back (quay lại Login)
-        btnBack.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-                new LoginFrame(clientHandler).setVisible(true);
-            }
-        });
+        btnRegister.addActionListener(this::onRegister);
+        btnBack.addActionListener(this::onBack);
     }
 
-    private void onRegister() {
+    private void onRegister(ActionEvent e) {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all fields");
+            JOptionPane.showMessageDialog(this, "Please fill in all fields!");
             return;
         }
 
         try {
-            // Gửi yêu cầu đăng ký đến Server
-            String request = "REGISTER|" + username + "|" + password;
-            clientHandler.sendMessage(request);
-
-            // Nhận phản hồi từ Server
-            String response = clientHandler.receiveMessage();
+            socketHandle.sendMessage("REGISTER|" + username + "|" + password);
+            String response = socketHandle.receiveMessage();
 
             if (response == null) {
-                JOptionPane.showMessageDialog(this, "No response from server");
+                JOptionPane.showMessageDialog(this, "No response from server!");
                 return;
             }
 
-            if (response.equalsIgnoreCase("REGISTER_SUCCESS")) {
-                JOptionPane.showMessageDialog(this, "Registration successful! You can login now.");
-                dispose();
-                new LoginFrame(clientHandler).setVisible(true);
-            } else if (response.equalsIgnoreCase("REGISTER_FAILED")) {
-                JOptionPane.showMessageDialog(this, "Username already exists or registration failed!");
-            } else {
-                JOptionPane.showMessageDialog(this, "Unknown response from server: " + response);
+            switch (response) {
+                case "REGISTER_SUCCESS":
+                    JOptionPane.showMessageDialog(this, "✅ Registration successful! You can login now.");
+                    dispose();
+                    new LoginFrame(socketHandle).setVisible(true);
+                    break;
+                case "REGISTER_FAILED":
+                    JOptionPane.showMessageDialog(this, "❌ Username already exists or registration failed!");
+                    break;
+                default:
+                    JOptionPane.showMessageDialog(this, "Unknown response from server: " + response);
+                    break;
             }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Error communicating with server!");
         }
     }
 
-    // Chạy thử standalone (test)
+    private void onBack(ActionEvent e) {
+        dispose();
+        new LoginFrame(socketHandle).setVisible(true);
+    }
+
+    // Test độc lập (chạy riêng frame này)
     public static void main(String[] args) {
-        ClientHandler clientHandler = new ClientHandler("localhost", 5000);
-        SwingUtilities.invokeLater(() -> new RegisterFrame(clientHandler).setVisible(true));
+        try {
+            SocketHandle socketHandle = new SocketHandle("localhost", 5000);
+            SwingUtilities.invokeLater(() -> new RegisterFrame(socketHandle).setVisible(true));
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Cannot connect to server!");
+        }
     }
 }
+
