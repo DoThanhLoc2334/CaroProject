@@ -60,7 +60,7 @@ public class LoginFrame extends JFrame {
         }
 
         // Gửi yêu cầu đăng nhập đến server
-        clientHandler.sendMessage("LOGIN:" + username + ":" + password);
+        clientHandler.sendMessage("LOGIN|" + username + "|" + password);
 
         // Chờ phản hồi từ server
         String response = clientHandler.receiveMessage();
