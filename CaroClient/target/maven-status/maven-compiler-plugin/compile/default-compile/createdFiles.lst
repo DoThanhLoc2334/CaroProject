@@ -1,8 +1,7 @@
-Controller\ClientHandler.class
-Controller\GameController.class
-Model\User.class
-View\RegisterFrame$1.class
-View\GameFrame.class
-View\LoginFrame.class
-View\RegisterFrame.class
-View\RegisterFrame$2.class
+view\RegisterFrame$1.class
+controller\ClientHandler.class
+controller\GameController.class
+view\GameFrame.class
+view\RegisterFrame$2.class
+view\RegisterFrame.class
+view\LoginFrame.class
