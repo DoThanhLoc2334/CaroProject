@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 
 public class LoginFrame extends JFrame {
+
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JButton btnLogin, btnRegister;
@@ -79,6 +80,8 @@ public class LoginFrame extends JFrame {
             if (response.equalsIgnoreCase("LOGIN_SUCCESS")) {
                 JOptionPane.showMessageDialog(this, "✅ Login successful!");
                 // TODO: mở giao diện game chính tại đây
+                this.dispose();
+                new HomePageFrame(socketHandle, username).setVisible(true);
             } else {
                 JOptionPane.showMessageDialog(this, "❌ Login failed. Please check username/password.");
             }
