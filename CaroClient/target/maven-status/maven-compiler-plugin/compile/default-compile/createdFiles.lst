@@ -1,11 +1,11 @@
+view\HomePageFrm$2.class
+model\Point.class
+view\LoginFrm.class
+model\XOButton.class
 controller\SocketHandle.class
 view\LoginFrm$1.class
 view\HomePageFrm.class
 view\GameClientFrm.class
-view\HomePageFrm$2.class
-model\Point.class
 view\HomePageFrm$1.class
-view\LoginFrm.class
 controller\Client.class
-model\XOButton.class
 model\User.class
