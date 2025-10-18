@@ -7,7 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ServerMain {
-    private static final int PORT = 5000; // Cổng server
+    private static final int PORT = 5000; 
     private ServerSocket serverSocket;
     private final UserManager userManager;
     private final RoomManager roomManager;
@@ -26,7 +26,7 @@ public class ServerMain {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("[Server] New client connected: " + clientSocket.getInetAddress());
 
-                // ✅ Truyền cả UserManager và RoomManager cho ClientHandler
+               
                 new Thread(new ClientHandler(clientSocket, userManager, roomManager)).start();
             }
         } catch (IOException e) {
