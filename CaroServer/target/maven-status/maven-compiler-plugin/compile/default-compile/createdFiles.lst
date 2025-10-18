@@ -1,9 +1,11 @@
 Controller\ClientHandler.class
+Model\Room.class
 Model\UserManager$1.class
 Model\GameRoom.class
 Model\User.class
 Model\UserManager.class
 Util\HashUtil.class
 Model\Board.class
+Model\RoomManager.class
 Controller\ServerMain.class
 Model\Move.class

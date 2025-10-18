@@ -7,5 +7,6 @@ View\GameFrame.class
 View\LoginFrame.class
 Model\XOButton.class
 View\RegisterFrame.class
+View\RoomManagerFrame.class
 View\HomePageFrame.class
 Controller\SocketHandle.class
