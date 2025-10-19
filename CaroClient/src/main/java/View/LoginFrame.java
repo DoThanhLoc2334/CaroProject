@@ -1,5 +1,6 @@
 package View;
 
+import Controller.GameController;
 import Controller.SocketHandle;
 import javax.swing.*;
 import java.awt.*;
@@ -16,6 +17,7 @@ public class LoginFrame extends JFrame {
     // ✅ Constructor mặc định (dùng khi chạy độc lập)
     public LoginFrame() {
         try {
+            // CHÚ Ý: chỉnh cổng cho khớp server (5000 hay 7777 tuỳ bạn)
             this.socketHandle = new SocketHandle("localhost", 5000);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "❌ Cannot connect to server!");
@@ -71,17 +73,26 @@ public class LoginFrame extends JFrame {
         socketHandle.sendMessage("LOGIN|" + username + "|" + password);
 
         try {
+            // Dùng blocking receive CHỈ cho bước login
             String response = socketHandle.receiveMessage();
             if (response == null) {
                 JOptionPane.showMessageDialog(this, "Server not responding!");
                 return;
             }
 
-            if (response.equalsIgnoreCase("LOGIN_SUCCESS")) {
+            if ("LOGIN_SUCCESS".equalsIgnoreCase(response)) {
                 JOptionPane.showMessageDialog(this, "✅ Login successful!");
-                // TODO: mở giao diện game chính tại đây
+
+                // 🔴 Quan trọng: đăng ký socket vào singleton & bật listener
+                SocketHandle.setInstance(socketHandle);
+                socketHandle.startListening(); // từ đây về sau KHÔNG dùng receiveMessage ở UI nữa
+
+                // Mở HomePage và cho GameController biết frame hiện tại
+                HomePageFrame home = new HomePageFrame(socketHandle, username);
+                GameController.getInstance().attachHome(home);
                 this.dispose();
-                new HomePageFrame(socketHandle, username).setVisible(true);
+                home.setVisible(true);
+
             } else {
                 JOptionPane.showMessageDialog(this, "❌ Login failed. Please check username/password.");
             }

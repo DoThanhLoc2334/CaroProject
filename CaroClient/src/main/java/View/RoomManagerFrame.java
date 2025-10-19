@@ -87,5 +87,11 @@ public class RoomManagerFrame extends JFrame {
             roomListModel.addElement(room);
         }
     }
+
+    public void setPlayers(java.util.List<String> finalNames) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+   
 }
 

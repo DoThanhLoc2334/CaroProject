@@ -4,11 +4,16 @@ import Model.UserManager;
 import Model.User;
 import Model.RoomManager;
 import Model.Room;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
+
+    // ==== Quản lý kết nối online theo username để gửi targeted messages ====
+    private static final ConcurrentHashMap<String, ClientHandler> ONLINE = new ConcurrentHashMap<>();
 
     private final Socket socket;
     private final UserManager userManager;
@@ -26,7 +31,7 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
             String line;
@@ -37,10 +42,27 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("[ClientHandler] Connection closed: " + socket.getInetAddress());
         } finally {
-            try {
-                socket.close();
-            } catch (IOException ignored) {
+            try { socket.close(); } catch (IOException ignored) {}
+            // remove khỏi ONLINE nếu đang đăng nhập
+            if (currentUsername != null) {
+                ONLINE.remove(currentUsername);
+                System.out.println("[Server] Offline: " + currentUsername);
             }
+        }
+    }
+
+    // Gửi message cho client của chính handler này
+    private void send(String msg) {
+        out.println(msg);
+    }
+
+    // ===== Gửi tới user bất kỳ qua bảng ONLINE (dùng cho broadcast) =====
+    private void sendToUser(String username, String msg) {
+        ClientHandler h = ONLINE.get(username);
+        if (h != null) {
+            h.send(msg);
+        } else {
+            System.out.println("[Server] Cannot send to " + username + " (offline?) -> " + msg);
         }
     }
 
@@ -57,14 +79,14 @@ public class ClientHandler implements Runnable {
 
                 boolean success = userManager.register(username, password);
                 if (success) {
-                    out.println("REGISTER_SUCCESS");
+                    send("REGISTER_SUCCESS");
                     System.out.println("[Server] User registered: " + username);
                 } else {
-                    out.println("REGISTER_FAIL");
+                    send("REGISTER_FAIL");
                     System.out.println("[Server] Register failed for: " + username);
                 }
             } else {
-                out.println("REGISTER_FAIL|INVALID_FORMAT");
+                send("REGISTER_FAIL|INVALID_FORMAT");
             }
 
         // ====== ĐĂNG NHẬP ======
@@ -77,20 +99,21 @@ public class ClientHandler implements Runnable {
                 User user = userManager.login(username, password);
                 if (user != null) {
                     currentUsername = username;
-                    out.println("LOGIN_SUCCESS");
+                    ONLINE.put(username, this); // <== thêm vào bảng online
+                    send("LOGIN_SUCCESS");
                     System.out.println("[Server] Login success: " + username);
                 } else {
-                    out.println("LOGIN_FAIL");
+                    send("LOGIN_FAIL");
                     System.out.println("[Server] Login failed: " + username);
                 }
             } else {
-                out.println("LOGIN_FAIL|INVALID_FORMAT");
+                send("LOGIN_FAIL|INVALID_FORMAT");
             }
 
         // ====== TẠO PHÒNG ======
         } else if (msg.startsWith("CREATE_ROOM")) {
             if (currentUsername == null) {
-                out.println("ERROR|NOT_LOGGED_IN");
+                send("ERROR|NOT_LOGGED_IN");
                 return;
             }
 
@@ -102,37 +125,43 @@ public class ClientHandler implements Runnable {
 
             Room room = roomManager.createRoom(creator);
             if (room != null) {
-                // ✅ Format khớp với client
-                out.println("ROOM_CREATED|" + room.getId());
+                send("ROOM_CREATED|" + room.getId());
                 System.out.println("[Server] " + creator + " created room " + room.getId());
             } else {
-                out.println("ERROR|CREATE_ROOM_FAILED");
+                send("ERROR|CREATE_ROOM_FAILED");
                 System.out.println("[Server] Failed to create room for " + creator);
             }
 
         // ====== THAM GIA PHÒNG ======
         } else if (msg.startsWith("JOIN_ROOM|")) {
             if (currentUsername == null) {
-                out.println("ERROR|NOT_LOGGED_IN");
+                send("ERROR|NOT_LOGGED_IN");
                 return;
             }
 
             String[] parts = msg.split("\\|");
             if (parts.length < 3) { // JOIN_ROOM|roomId|username
-                out.println("ERROR|INVALID_FORMAT");
+                send("ERROR|INVALID_FORMAT");
                 return;
             }
 
             String roomId = parts[1];
             String joiner = parts[2];
-            Room room = roomManager.joinRoom(roomId, joiner);
 
+            Room room = roomManager.joinRoom(roomId, joiner);
             if (room != null) {
-                // ✅ Format khớp với client HomePageFrame
-                out.println("ROOM_JOINED|" + room.getId());
+                // 1) xác nhận cho client vừa join
+                send("ROOM_JOINED|" + room.getId());
                 System.out.println("[Server] " + joiner + " joined room " + roomId);
+
+                // 2) broadcast danh sách người trong phòng (JOINED_ROOM|id|name1,name2)
+                roomManager.broadcastPlayers(room, this::sendToUser);
+
+                // 3) nếu đủ 2 người → auto-start (GAME_STARTED|roomId|youAre|turn|boardSize)
+                roomManager.onPlayerJoined(room, this::sendToUser);
+
             } else {
-                out.println("ERROR|JOIN_ROOM_FAILED|" + roomId);
+                send("ERROR|JOIN_ROOM_FAILED|" + roomId);
                 System.out.println("[Server] Join room failed: " + roomId);
             }
 
@@ -140,7 +169,7 @@ public class ClientHandler implements Runnable {
         } else if (msg.equals("LIST_ROOMS")) {
             List<Room> waitingRooms = roomManager.getWaitingRooms();
             if (waitingRooms.isEmpty()) {
-                out.println("ROOM_LIST|EMPTY");
+                send("ROOM_LIST|EMPTY");
             } else {
                 StringBuilder sb = new StringBuilder("ROOM_LIST");
                 for (Room room : waitingRooms) {
@@ -151,12 +180,89 @@ public class ClientHandler implements Runnable {
                       .append(",")
                       .append(room.getStatus());
                 }
-                out.println(sb.toString());
+                send(sb.toString());
             }
+
+        // ====== ĐÁNH NƯỚC: MOVE|<roomId>|<x>|<y> ======
+        } else if (msg.startsWith("MOVE|")) {
+            String[] parts = msg.split("\\|");
+            if (parts.length < 4) { send("ERROR|INVALID_MOVE_FORMAT"); return; }
+
+            String roomId = parts[1];   // LƯU Ý: roomId là CHUỖI (VD: 70749A)
+            int x, y;
+            try {
+                x = Integer.parseInt(parts[2]);
+                y = Integer.parseInt(parts[3]);
+            } catch (NumberFormatException nfe) {
+                send("ERROR|INVALID_COORD");
+                return;
+            }
+
+            Room room = roomManager.getRoomById(roomId);
+            if (room == null) {
+                send("ERROR|ROOM_NOT_FOUND|" + roomId);
+                return;
+            }
+            if (!room.isFull() || !room.isPlaying()) {
+                send("ERROR|ROOM_NOT_PLAYING");
+                return;
+            }
+
+            // Xác định người chơi hiện tại là X hay O
+            char myMark;
+            if (currentUsername != null && currentUsername.equals(room.getPlayer1())) {
+                myMark = 'X';
+            } else if (currentUsername != null && currentUsername.equals(room.getPlayer2())) {
+                myMark = 'O';
+            } else {
+                send("ERROR|NOT_IN_ROOM");
+                return;
+            }
+
+            // Kiểm tra lượt
+            if (room.getTurn() != myMark) {
+                send("ERROR|NOT_YOUR_TURN");
+                return;
+            }
+
+            // Đặt quân nếu ô trống
+            boolean placed = room.placeMark(x, y, myMark);
+            if (!placed) {
+                send("ERROR|CELL_TAKEN");
+                return;
+            }
+
+            // Đổi lượt
+            char nextTurn = (myMark == 'X') ? 'O' : 'X';
+            room.setTurn(nextTurn);
+
+            // Broadcast nước đi
+            String applied = "MOVE_APPLIED|" + roomId + "|" + x + "|" + y + "|" + myMark + "|" + nextTurn;
+            sendToUser(room.getPlayer1(), applied);
+            sendToUser(room.getPlayer2(), applied);
+
+            // ====== THẮNG CUỘC: gửi GAME_OVER ngay lập tức ======
+            if (room.checkWin(x, y, myMark)) {
+                String winnerName = (myMark == 'X') ? room.getPlayer1() : room.getPlayer2();
+                String over = "GAME_OVER|" + roomId + "|" + myMark + "|" + winnerName;
+                sendToUser(room.getPlayer1(), over);
+                sendToUser(room.getPlayer2(), over);
+                room.setStatus("FINISHED");
+            }
+
+        // ====== ĐĂNG XUẤT ======
+        } else if (msg.startsWith("LOGOUT|")) {
+            String[] parts = msg.split("\\|");
+            String user = (parts.length >= 2) ? parts[1] : currentUsername;
+            if (user != null) {
+                ONLINE.remove(user);
+                System.out.println("[Server] Logout: " + user);
+            }
+            send("LOGOUT_OK");
 
         // ====== LỆNH KHÔNG HỢP LỆ ======
         } else {
-            out.println("UNKNOWN_COMMAND");
+            send("UNKNOWN_COMMAND");
             System.out.println("[Server] Unknown command: " + msg);
         }
     }
