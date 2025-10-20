@@ -3,8 +3,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package View;
-// RoomManagerFrame.java
 
+// RoomManagerFrame.java
 import Controller.SocketHandle;
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +16,8 @@ public class RoomManagerFrame extends JFrame {
     private String username;
     private DefaultListModel<String> roomListModel;
     private JList<String> roomList;
-    private JButton btnCreateRoom, btnJoinRoom, btnRefresh, btnBack;
+    // ĐÃ BỎ: private JButton btnCreateRoom;
+    private JButton btnJoinRoom, btnRefresh, btnBack;
 
     public RoomManagerFrame(SocketHandle socketHandle, String username) {
         this.socketHandle = socketHandle;
@@ -34,13 +35,14 @@ public class RoomManagerFrame extends JFrame {
         roomList = new JList<>(roomListModel);
         JScrollPane scrollPane = new JScrollPane(roomList);
 
-        btnCreateRoom = new JButton("Create Room");
+        // ĐÃ BỎ: btnCreateRoom = new JButton("Create Room");
         btnJoinRoom = new JButton("Join Room");
         btnRefresh = new JButton("Refresh");
         btnBack = new JButton("Back");
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 4, 5, 5));
-        buttonPanel.add(btnCreateRoom);
+        // Từ 4 cột -> 3 cột
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
+        // ĐÃ BỎ: buttonPanel.add(btnCreateRoom);
         buttonPanel.add(btnJoinRoom);
         buttonPanel.add(btnRefresh);
         buttonPanel.add(btnBack);
@@ -48,19 +50,14 @@ public class RoomManagerFrame extends JFrame {
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Gắn sự kiện
-        btnCreateRoom.addActionListener(this::onCreateRoom);
+        // Gắn sự kiện (đÃ BỎ onCreateRoom)
         btnJoinRoom.addActionListener(this::onJoinRoom);
         btnRefresh.addActionListener(this::onRefresh);
         btnBack.addActionListener(this::onBack);
     }
 
-    private void onCreateRoom(ActionEvent e) {
-        String roomName = JOptionPane.showInputDialog(this, "Enter room name:");
-        if (roomName != null && !roomName.trim().isEmpty()) {
-            socketHandle.sendMessage("CREATE_ROOM|" + roomName + "|" + username);
-        }
-    }
+    // ĐÃ XOÁ HẲN:
+    // private void onCreateRoom(ActionEvent e) { ... }
 
     private void onJoinRoom(ActionEvent e) {
         String selectedRoom = roomList.getSelectedValue();
@@ -89,9 +86,6 @@ public class RoomManagerFrame extends JFrame {
     }
 
     public void setPlayers(java.util.List<String> finalNames) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        throw new UnsupportedOperationException("Not supported yet."); 
     }
-
-   
 }
-
