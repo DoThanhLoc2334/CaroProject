@@ -16,7 +16,6 @@ public class RoomManagerFrame extends JFrame {
     private String username;
     private DefaultListModel<String> roomListModel;
     private JList<String> roomList;
-    // ĐÃ BỎ: private JButton btnCreateRoom;
     private JButton btnJoinRoom, btnRefresh, btnBack;
 
     public RoomManagerFrame(SocketHandle socketHandle, String username) {
@@ -35,14 +34,11 @@ public class RoomManagerFrame extends JFrame {
         roomList = new JList<>(roomListModel);
         JScrollPane scrollPane = new JScrollPane(roomList);
 
-        // ĐÃ BỎ: btnCreateRoom = new JButton("Create Room");
         btnJoinRoom = new JButton("Join Room");
         btnRefresh = new JButton("Refresh");
         btnBack = new JButton("Back");
 
-        // Từ 4 cột -> 3 cột
         JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
-        // ĐÃ BỎ: buttonPanel.add(btnCreateRoom);
         buttonPanel.add(btnJoinRoom);
         buttonPanel.add(btnRefresh);
         buttonPanel.add(btnBack);
@@ -50,14 +46,10 @@ public class RoomManagerFrame extends JFrame {
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Gắn sự kiện (đÃ BỎ onCreateRoom)
         btnJoinRoom.addActionListener(this::onJoinRoom);
         btnRefresh.addActionListener(this::onRefresh);
         btnBack.addActionListener(this::onBack);
     }
-
-    // ĐÃ XOÁ HẲN:
-    // private void onCreateRoom(ActionEvent e) { ... }
 
     private void onJoinRoom(ActionEvent e) {
         String selectedRoom = roomList.getSelectedValue();
@@ -77,7 +69,6 @@ public class RoomManagerFrame extends JFrame {
         new HomePageFrame(socketHandle, username).setVisible(true);
     }
 
-    // Cập nhật danh sách phòng từ server
     public void updateRoomList(ArrayList<String> rooms) {
         roomListModel.clear();
         for (String room : rooms) {
