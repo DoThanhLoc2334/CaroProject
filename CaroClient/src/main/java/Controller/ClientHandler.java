@@ -12,7 +12,6 @@ public class ClientHandler {
     private BufferedReader in;
     private PrintWriter out;
 
-    // Khởi tạo kết nối tới Server
     public ClientHandler(String host, int port) {
         try {
             socket = new Socket("172.20.10.9", 5000);
@@ -25,7 +24,6 @@ public class ClientHandler {
         }
     }
 
-    // Gửi message đến Server
     public void sendMessage(String message) {
         if (out != null) {
             out.println(message);
@@ -33,7 +31,6 @@ public class ClientHandler {
         }
     }
 
-    // Nhận message từ Server
     public String receiveMessage() {
         try {
             if (in != null) {
@@ -47,7 +44,6 @@ public class ClientHandler {
         return null;
     }
 
-    // Đóng kết nối
     public void close() {
         try {
             if (socket != null) socket.close();

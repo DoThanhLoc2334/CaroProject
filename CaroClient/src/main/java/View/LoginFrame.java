@@ -14,10 +14,8 @@ public class LoginFrame extends JFrame {
     private JButton btnLogin, btnRegister;
     private SocketHandle socketHandle;
 
-    // ✅ Constructor mặc định (dùng khi chạy độc lập)
     public LoginFrame() {
         try {
-            // CHÚ Ý: chỉnh cổng cho khớp server (5000 hay 7777 tuỳ bạn)
             this.socketHandle = new SocketHandle("172.20.10.9", 5000);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "❌ Cannot connect to server!");
@@ -26,7 +24,6 @@ public class LoginFrame extends JFrame {
         initComponents();
     }
 
-    // ✅ Constructor dùng chung socket (khi mở từ RegisterFrame)
     public LoginFrame(SocketHandle socketHandle) {
         this.socketHandle = socketHandle;
         initComponents();
@@ -69,11 +66,9 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        // Gửi yêu cầu đăng nhập
         socketHandle.sendMessage("LOGIN|" + username + "|" + password);
 
         try {
-            // Dùng blocking receive CHỈ cho bước login
             String response = socketHandle.receiveMessage();
             if (response == null) {
                 JOptionPane.showMessageDialog(this, "Server not responding!");
@@ -83,11 +78,9 @@ public class LoginFrame extends JFrame {
             if ("LOGIN_SUCCESS".equalsIgnoreCase(response)) {
                 JOptionPane.showMessageDialog(this, "✅ Login successful!");
 
-                // 🔴 Quan trọng: đăng ký socket vào singleton & bật listener
                 SocketHandle.setInstance(socketHandle);
                 socketHandle.startListening(); // từ đây về sau KHÔNG dùng receiveMessage ở UI nữa
 
-                // Mở HomePage và cho GameController biết frame hiện tại
                 HomePageFrame home = new HomePageFrame(socketHandle, username);
                 GameController.getInstance().attachHome(home);
                 this.dispose();
