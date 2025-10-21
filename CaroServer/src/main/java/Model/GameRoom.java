@@ -13,9 +13,9 @@ public class GameRoom {
     private Status status = Status.WAITING;
 
     // Trạng thái ván
-    private char currentTurn = 'X'; // X đi trước
+    private char currentTurn = 'X'; 
     private int boardSize = 20;
-    private Board board; // bạn đã có Board.java
+    private Board board; 
 
     public GameRoom(int id, String name) {
         this.roomId = id; this.roomName = name;
@@ -33,7 +33,7 @@ public class GameRoom {
         if (players.size() == 2 && status == Status.WAITING) {
             status = Status.PLAYING;
             currentTurn = 'X'; // người 1 là X, người 2 là O
-            board.clear();     // nếu bạn có clear()
+            board.clear();     
         }
     }
 

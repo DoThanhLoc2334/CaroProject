@@ -6,24 +6,17 @@ package Model;
 
 import java.util.Arrays;
 
-/**
- * Phòng chơi Caro + trạng thái ván
- * - Giữ nguyên các thuộc tính id/player1/player2/status để tương thích
- * - Bổ sung bàn cờ, lượt đi, API placeMark/checkWin phục vụ MOVE
- */
+
 public class Room {
-    // ====== Thông tin phòng ======
     private String id;
-    private String player1;   // X
-    private String player2;   // O
-    private String status;    // WAITING, PLAYING, FINISHED
+    private String player1;   
+    private String player2;   
+    private String status;    
 
-    // ====== Trạng thái ván ======
-    private final int size = 20;          // kích thước bàn cờ
-    private final char[][] board;         // '\0' = ô trống
-    private char turn = 'X';              // X đi trước mặc định
+    private final int size = 20;         
+    private final char[][] board;        
+    private char turn = 'X';             
 
-    // Constructor tạo phòng mới (chỉ có người chơi 1)
     public Room(String id, String player1) {
         this.id = id;
         this.player1 = player1;
@@ -33,7 +26,6 @@ public class Room {
         for (char[] row : board) Arrays.fill(row, '\0');
     }
 
-    // Constructor đầy đủ (phòng đã có 2 người)
     public Room(String id, String player1, String player2, String status) {
         this.id = id;
         this.player1 = player1;
@@ -43,7 +35,6 @@ public class Room {
         for (char[] row : board) Arrays.fill(row, '\0');
     }
 
-    // ===== Getter & Setter cơ bản =====
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -56,13 +47,11 @@ public class Room {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    // ===== Trạng thái phòng =====
     public boolean isFull() { return player1 != null && player2 != null; }
     public boolean isWaiting() { return "WAITING".equalsIgnoreCase(status) && player2 == null; }
     public boolean isPlaying() { return "PLAYING".equalsIgnoreCase(status); }
     public boolean isFinished() { return "FINISHED".equalsIgnoreCase(status); }
 
-    // ===== API cho trò chơi =====
     public int getBoardSize() { return size; }
 
     public synchronized char getTurn() { return turn; }
@@ -71,10 +60,7 @@ public class Room {
         if (turn == 'X' || turn == 'O') this.turn = turn;
     }
 
-    /**
-     * Đặt quân nếu hợp lệ (ô trống, trong biên)
-     * @return true nếu đặt thành công
-     */
+    
     public synchronized boolean placeMark(int x, int y, char mark) {
         if (mark != 'X' && mark != 'O') return false;
         if (x < 0 || y < 0 || x >= size || y >= size) return false;
@@ -83,9 +69,7 @@ public class Room {
         return true;
     }
 
-    /**
-     * Kiểm tra thắng 5 liên tiếp qua ô (x,y) vừa đặt
-     */
+   
     public synchronized boolean checkWin(int x, int y, char mark) {
         if (mark != 'X' && mark != 'O') return false;
         return countLine(x, y, 1, 0, mark) + countLine(x, y, -1, 0, mark) - 1 >= 5 || // ngang

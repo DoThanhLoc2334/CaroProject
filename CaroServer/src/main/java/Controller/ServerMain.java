@@ -19,8 +19,11 @@ public class ServerMain {
 
     public void startServer() {
         try {
+            // Bind server trên tất cả interfaces (0.0.0.0) để các máy khác có thể kết nối
+            // Server sẽ chấp nhận kết nối từ mọi IP trong mạng LAN
             serverSocket = new ServerSocket(PORT);
-            System.out.println("[Server] Started on port " + PORT);
+            System.out.println("[Server] Started on all interfaces, port " + PORT);
+            System.out.println("[Server] Clients can connect using your LAN IP (172.20.10.9)");
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();

@@ -36,7 +36,7 @@ public class RoomManager {
         }
 
         room.setPlayer2(username);
-        room.setStatus("PLAYING"); // giữ nguyên logic của bạn
+        room.setStatus("PLAYING"); 
         System.out.println("[RoomManager] " + username + " joined room " + roomId);
         return room;
     }
@@ -77,7 +77,6 @@ public class RoomManager {
         }
     }
 
-    // Thêm hàm phụ để tương thích với ClientHandler
     public synchronized ArrayList<String> getRoomNames() {
         ArrayList<String> names = new ArrayList<>();
         for (Room room : rooms) {
@@ -86,11 +85,7 @@ public class RoomManager {
         return names;
     }
 
-    // ===================== A2: Auto-start & broadcast =====================
-
-    /** Gửi danh sách người trong phòng cho tất cả người chơi.
-     *  Format: JOINED_ROOM|<roomId>|name1,name2
-     */
+    
     public synchronized void broadcastPlayers(Room room, BiConsumer<String, String> sendToUser) {
         String csv = buildPlayersCsv(room);
         String msg = "JOINED_ROOM|" + room.getId() + "|" + csv;
@@ -100,9 +95,7 @@ public class RoomManager {
         System.out.println("[RoomManager] Broadcast players: " + msg);
     }
 
-    /** Khi đủ 2 user trong cùng phòng: chuyển WAITING -> PLAYING và báo GAME_STARTED cho 2 phía.
-     *  Format: GAME_STARTED|<roomId>|<youAre>|<turn>|<boardSize>
-     */
+    
     public synchronized void onPlayerJoined(Room room, BiConsumer<String, String> sendToUser) {
         // điều kiện an toàn: cần đủ 2 người và trạng thái không phải FINISHED
         if (room == null) return;
@@ -111,12 +104,10 @@ public class RoomManager {
         boolean hasP2 = room.getPlayer2() != null && !room.getPlayer2().isEmpty();
         if (!hasP1 || !hasP2) return;
 
-        // Nếu phòng đang WAITING thì chuyển sang PLAYING
         if (room.isWaiting() || "WAITING".equalsIgnoreCase(room.getStatus())) {
             room.setStatus("PLAYING");
         }
 
-        // Thông số ván (giữ cố định theo yêu cầu)
         String roomId = room.getId();
         int boardSize = 20;
         String turn = "X"; // X đi trước
@@ -134,7 +125,6 @@ public class RoomManager {
                 " -> send GAME_STARTED to [" + p1 + "=X, " + p2 + "=O]");
     }
 
-    // Helper: build "name1,name2"
     private String buildPlayersCsv(Room room) {
         StringBuilder sb = new StringBuilder();
         if (room.getPlayer1() != null) sb.append(room.getPlayer1());
