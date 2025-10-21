@@ -97,7 +97,6 @@ public class RoomManager {
 
     
     public synchronized void onPlayerJoined(Room room, BiConsumer<String, String> sendToUser) {
-        // điều kiện an toàn: cần đủ 2 người và trạng thái không phải FINISHED
         if (room == null) return;
 
         boolean hasP1 = room.getPlayer1() != null && !room.getPlayer1().isEmpty();
