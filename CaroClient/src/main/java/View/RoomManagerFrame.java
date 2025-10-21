@@ -4,7 +4,6 @@
  */
 package View;
 
-// RoomManagerFrame.java
 import Controller.SocketHandle;
 import javax.swing.*;
 import java.awt.*;

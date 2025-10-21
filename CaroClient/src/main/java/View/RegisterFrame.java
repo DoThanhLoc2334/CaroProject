@@ -97,7 +97,6 @@ public class RegisterFrame extends JFrame {
         new LoginFrame(socketHandle).setVisible(true);
     }
 
-    // Test độc lập (chạy riêng frame này)
     public static void main(String[] args) {
         try {
             SocketHandle socketHandle = new SocketHandle("172.20.10.9", 5000);

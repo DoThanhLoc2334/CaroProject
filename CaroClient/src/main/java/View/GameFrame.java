@@ -10,40 +10,30 @@ import Model.XOButton;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Màn hình ván chơi
- * - Dùng roomId dạng String (khớp server gửi, ví dụ "70749A")
- * - Gửi MOVE khi tới lượt mình
- * - Nhận cập nhật bằng applyMove(...) và GAME_OVER(...)
- */
+
 public class GameFrame extends javax.swing.JFrame {
 
     private static final java.util.logging.Logger logger =
             java.util.logging.Logger.getLogger(GameFrame.class.getName());
 
-    // Trạng thái ván
-    private String roomIdStr = "";   // dùng String thay cho int
+    private String roomIdStr = "";
     private int boardSize = 20;
     private char me = 'X';
     private char turn = 'X';
     private boolean finished = false;
 
-    // Bàn cờ
     private XOButton[][] buttons;
 
-    /** Constructor mặc định cho preview GUI Builder */
     public GameFrame() {
         initComponents();
         setLocationRelativeTo(null);
-        setupBoard(false); // preview, không gửi move
+        setupBoard(false);
     }
 
-    /** Constructor cũ (int) — giữ để tương thích, nhưng map sang String */
     public GameFrame(int roomId, int size, char youAre, char startTurn) {
         this(String.valueOf(roomId), size, youAre, startTurn);
     }
 
-    /** Constructor mới: dùng roomId dạng String (KHỚP GAME_STARTED từ server) */
     public GameFrame(String roomIdStr, int size, char youAre, char startTurn) {
         initComponents();
         setLocationRelativeTo(null);
@@ -56,13 +46,10 @@ public class GameFrame extends javax.swing.JFrame {
         lblStatus.setText(statusText());
         setTitle("Caro - Room " + this.roomIdStr + " | You: " + this.me);
 
-        // Khởi tạo bàn cờ có gắn logic gửi MOVE
         setupBoard(true);
     }
 
-    // Tạo bàn cờ và gắn listener
     private void setupBoard(boolean enableSendMove) {
-        // Làm sạch panel và set layout đúng kích thước hiện tại
         panelBoard.removeAll();
         panelBoard.setLayout(new GridLayout(boardSize, boardSize));
         panelBoard.setPreferredSize(new Dimension(34 * boardSize, 34 * boardSize));
@@ -77,12 +64,10 @@ public class GameFrame extends javax.swing.JFrame {
                 if (enableSendMove) {
                     final int x = i, y = j;
                     btn.addActionListener(e -> {
-                        if (finished) return;      // ván đã kết thúc
-                        // Chỉ cho đánh nếu ô trống và đúng lượt
+                        if (finished) return;
                         if (!btn.isEmpty()) return;
                         if (turn != me) return;
 
-                        // Gửi MOVE|<roomIdStr>|x|y  (roomId dạng STRING)
                         try {
                             System.out.println("[GameFrame] SEND MOVE: " + roomIdStr + " -> (" + x + "," + y + ")");
                             SocketHandle.getInstance()
@@ -103,17 +88,14 @@ public class GameFrame extends javax.swing.JFrame {
         panelBoard.revalidate();
         panelBoard.repaint();
 
-        // Cập nhật nhãn trạng thái
         lblStatus.setText(statusText());
-        pack(); // tính lại kích thước theo preferred size
+        pack();
     }
 
-    // Hiển thị trạng thái lượt
     private String statusText() {
         return (finished ? "Finished • " : "") + "You are " + me + " | Turn: " + turn;
     }
 
-    /** Khóa toàn bộ bàn cờ (sau khi GAME_OVER) */
     public void disableBoard() {
         if (buttons == null) return;
         for (int i = 0; i < boardSize; i++) {
@@ -123,21 +105,17 @@ public class GameFrame extends javax.swing.JFrame {
         }
     }
 
-    /**
-     * Được GameController gọi khi server phát MOVE_APPLIED|roomId|x|y|mark|nextTurn
-     */
+
     public void applyMove(int x, int y, char mark, char nextTurn) {
         if (buttons == null || finished) return;
         if (x < 0 || y < 0 || x >= boardSize || y >= boardSize) return;
 
-        buttons[x][y].setMark(mark);   // vẽ X/O
+        buttons[x][y].setMark(mark);
         this.turn = nextTurn;
         lblStatus.setText(statusText());
     }
 
-    /**
-     * Được GameController gọi khi server phát GAME_OVER|roomId|winnerMark|winnerName
-     */
+
     public void gameOver(char winnerMark, String winnerName) {
         finished = true;
         disableBoard();
@@ -147,11 +125,9 @@ public class GameFrame extends javax.swing.JFrame {
                 ? "🎉 Bạn đã THẮNG!\nNgười thắng: " + winnerName + " (" + winnerMark + ")"
                 : "😢 Bạn đã THUA.\nNgười thắng: " + winnerName + " (" + winnerMark + ")";
         JOptionPane.showMessageDialog(this, msg, "Game Over", JOptionPane.INFORMATION_MESSAGE);
-        // Nếu muốn đóng cửa sổ ngay:
-        // dispose();
+
     }
 
-    // ================== Code sinh bởi GUI Builder ==================
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
@@ -216,9 +192,7 @@ public class GameFrame extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(() -> new GameFrame().setVisible(true));
     }
 
-    // Variables declaration - do not modify
     private javax.swing.JButton btnQuitGame;
     private javax.swing.JLabel lblStatus;
     private javax.swing.JPanel panelBoard;
-    // End of variables declaration
 }

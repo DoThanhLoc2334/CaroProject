@@ -13,7 +13,7 @@ public class SocketHandle {
     private volatile boolean listening = false;
 
     public SocketHandle(String host, int port) throws IOException {
-        socket = new Socket(host, port);
+        socket = new Socket("172.20.10.9", 5000);
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
         in  = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         System.out.println("[Client] Connected to server " + host + ":" + port);
@@ -24,7 +24,7 @@ public class SocketHandle {
             synchronized (SocketHandle.class) {
                 if (instance == null) {
                     try {
-                        instance = new SocketHandle("172.20.10.9", 5000); 
+                        instance = new SocketHandle("172.20.10.9", 5000);
                     } catch (IOException e) {
                         throw new RuntimeException("Cannot connect to server", e);
                     }
