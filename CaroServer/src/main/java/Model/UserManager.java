@@ -26,7 +26,7 @@ public class UserManager {
             File file = new File(FILE_PATH);
             if (!file.exists()) {
                 file.createNewFile();
-                saveUsers(); // tạo file rỗng ban đầu
+                saveUsers(); 
             }
             FileReader reader = new FileReader(FILE_PATH);
             Type listType = new TypeToken<ArrayList<User>>() {}.getType();
@@ -51,7 +51,7 @@ public class UserManager {
 
     public synchronized boolean register(String username, String password) {
         if (getUserByName(username) != null) {
-            return false; // đã tồn tại
+            return false; 
         }
         String hash = HashUtil.hashPassword(password);
         users.add(new User(username, hash));
