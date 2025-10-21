@@ -80,7 +80,8 @@ public class RoomManager {
     public synchronized ArrayList<String> getRoomNames() {
         ArrayList<String> names = new ArrayList<>();
         for (Room room : rooms) {
-            names.add(room.getId() + " - " + room.getPlayer1() + " (" + room.getStatus() + ")");
+            names.add(room.getId() + " - " + room.getPlayer1() +
+                    " (" + room.getStatus() + ")");
         }
         return names;
     }
@@ -90,8 +91,10 @@ public class RoomManager {
         String csv = buildPlayersCsv(room);
         String msg = "JOINED_ROOM|" + room.getId() + "|" + csv;
 
-        if (room.getPlayer1() != null) sendToUser.accept(room.getPlayer1(), msg);
-        if (room.getPlayer2() != null) sendToUser.accept(room.getPlayer2(), msg);
+        if (room.getPlayer1() != null) 
+            sendToUser.accept(room.getPlayer1(), msg);
+        if (room.getPlayer2() != null) 
+            sendToUser.accept(room.getPlayer2(), msg);
         System.out.println("[RoomManager] Broadcast players: " + msg);
     }
 
