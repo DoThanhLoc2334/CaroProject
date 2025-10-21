@@ -14,7 +14,7 @@ public class SocketHandle {
 
     // Cách 1: cho phép new từ Login/Register
     public SocketHandle(String host, int port) throws IOException {
-        socket = new Socket(host, port);
+        socket = new Socket("172.20.10.9", port);
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
         in  = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         System.out.println("[Client] Connected to server " + host + ":" + port);

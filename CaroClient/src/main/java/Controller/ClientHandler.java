@@ -15,7 +15,7 @@ public class ClientHandler {
     // Khởi tạo kết nối tới Server
     public ClientHandler(String host, int port) {
         try {
-            socket = new Socket(host, port);
+            socket = new Socket("172.20.10.9", 8000);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
             System.out.println("✅ Connected to server at " + host + ":" + port);
