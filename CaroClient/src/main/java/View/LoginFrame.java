@@ -18,7 +18,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame() {
         try {
             // CHÚ Ý: chỉnh cổng cho khớp server (5000 hay 7777 tuỳ bạn)
-            this.socketHandle = new SocketHandle("localhost", 5000);
+            this.socketHandle = new SocketHandle("172.20.10.9", 5000);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "❌ Cannot connect to server!");
             return;

@@ -1,12 +1,12 @@
-Controller\ClientHandler.class
 Controller\GameController.class
 Model\Point.class
-Model\User.class
 View\GameClientFrm.class
-View\GameFrame.class
-View\LoginFrame.class
 Model\XOButton.class
 View\RegisterFrame.class
 View\RoomManagerFrame.class
 View\HomePageFrame.class
+Controller\ClientHandler.class
+Model\User.class
+View\GameFrame.class
+View\LoginFrame.class
 Controller\SocketHandle.class

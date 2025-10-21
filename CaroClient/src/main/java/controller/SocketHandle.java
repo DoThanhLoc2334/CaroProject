@@ -26,7 +26,7 @@ public class SocketHandle {
             synchronized (SocketHandle.class) {
                 if (instance == null) {
                     try {
-                        instance = new SocketHandle("127.0.0.1", 7777); // chỉnh host/port theo server
+                        instance = new SocketHandle("172.20.10.9", 5000); // chỉnh host/port theo server
                     } catch (IOException e) {
                         throw new RuntimeException("Cannot connect to server", e);
                     }

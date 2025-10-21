@@ -15,12 +15,12 @@ public class ClientHandler {
     // Khởi tạo kết nối tới Server
     public ClientHandler(String host, int port) {
         try {
-            socket = new Socket(host, port);
+            socket = new Socket("172.20.10.9", 5000);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-            System.out.println("✅ Connected to server at " + host + ":" + port);
+            System.out.println("Connected to server at " + host + ":" + port);
         } catch (IOException e) {
-            System.out.println("❌ Cannot connect to server!");
+            System.out.println("Cannot connect to server!");
             e.printStackTrace();
         }
     }
@@ -53,7 +53,7 @@ public class ClientHandler {
             if (socket != null) socket.close();
             if (in != null) in.close();
             if (out != null) out.close();
-            System.out.println("🔌 Disconnected from server.");
+            System.out.println("Disconnected from server.");
         } catch (IOException e) {
             e.printStackTrace();
         }
