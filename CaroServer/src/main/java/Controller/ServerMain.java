@@ -13,25 +13,22 @@ public class ServerMain {
         try {
             UserManager userManager = new UserManager();
             RoomManager roomManager = new RoomManager();
-            System.out.println("Server da san sang!");
+            System.out.println("Server already running!");
             
             ServerSocket serverSocket = new ServerSocket(PORT);
-            System.out.println("Server dang chay tren port: " + PORT);
-            System.out.println("Cho client ket noi...");
+            System.out.println("Server is running on port: " + PORT);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Co client moi ket noi: " + clientSocket.getInetAddress());
+                System.out.println("New client connected: " + clientSocket.getInetAddress());
 
                 ClientHandler clientHandler = new ClientHandler(clientSocket, userManager, roomManager);
                 Thread thread = new Thread(clientHandler);
                 thread.start();
                 
-                System.out.println("Da tao Thread cho client");
             }
             
         } catch (IOException e) {
-            System.out.println("Loi khi chay server: " + e.getMessage());
             e.printStackTrace();
         }
     }
