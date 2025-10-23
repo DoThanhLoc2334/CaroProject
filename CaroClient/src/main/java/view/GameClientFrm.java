@@ -11,7 +11,7 @@ import java.awt.GridLayout;
 
 /**
  *
- * @author hoang
+ * @author hoang 
  */
 public class GameClientFrm extends javax.swing.JFrame {
     

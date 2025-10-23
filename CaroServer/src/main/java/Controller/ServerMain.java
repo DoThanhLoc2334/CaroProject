@@ -8,33 +8,31 @@ import java.net.Socket;
 
 public class ServerMain {
     private static final int PORT = 5000; 
-    private ServerSocket serverSocket;
-    private final UserManager userManager;
-    private final RoomManager roomManager;
 
-    public ServerMain() {
-        userManager = new UserManager();
-        roomManager = new RoomManager();
-    }
-
-    public void startServer() {
+    public static void main(String[] args) {
         try {
-            serverSocket = new ServerSocket(PORT);
-            System.out.println("[Server] Started on all interfaces, port " + PORT);
+            UserManager userManager = new UserManager();
+            RoomManager roomManager = new RoomManager();
+            System.out.println("Server da san sang!");
+            
+            ServerSocket serverSocket = new ServerSocket(PORT);
+            System.out.println("Server dang chay tren port: " + PORT);
+            System.out.println("Cho client ket noi...");
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("[Server] New client connected: " + clientSocket.getInetAddress());
+                System.out.println("Co client moi ket noi: " + clientSocket.getInetAddress());
 
-                new Thread(new ClientHandler(clientSocket, userManager, roomManager)).start();
+                ClientHandler clientHandler = new ClientHandler(clientSocket, userManager, roomManager);
+                Thread thread = new Thread(clientHandler);
+                thread.start();
+                
+                System.out.println("Da tao Thread cho client");
             }
+            
         } catch (IOException e) {
+            System.out.println("Loi khi chay server: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
-        ServerMain server = new ServerMain();
-        server.startServer();
     }
 }

@@ -76,12 +76,12 @@ public class RegisterFrame extends JFrame {
 
             switch (response) {
                 case "REGISTER_SUCCESS":
-                    JOptionPane.showMessageDialog(this, "✅ Registration successful! You can login now.");
+                    JOptionPane.showMessageDialog(this, "Registration successful! You can login now.");
                     dispose();
                     new LoginFrame(socketHandle).setVisible(true);
                     break;
                 case "REGISTER_FAILED":
-                    JOptionPane.showMessageDialog(this, "❌ Username already exists or registration failed!");
+                    JOptionPane.showMessageDialog(this, "Username already exists or registration failed!");
                     break;
                 default:
                     JOptionPane.showMessageDialog(this, "Unknown response from server: " + response);
@@ -106,4 +106,3 @@ public class RegisterFrame extends JFrame {
         }
     }
 }
-

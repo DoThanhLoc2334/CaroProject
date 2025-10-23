@@ -4,266 +4,338 @@ import Model.UserManager;
 import Model.User;
 import Model.RoomManager;
 import Model.Room;
-
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * ClientHandler - Class xử lý kết nối với từng client
+ * Mỗi khi có client kết nối, server sẽ tạo một ClientHandler riêng
+ * Class này chạy trong thread riêng để xử lý tin nhắn từ client
+ */
 public class ClientHandler implements Runnable {
 
-    // ==== Quản lý kết nối online theo username để gửi targeted messages ====
-    private static final ConcurrentHashMap<String, ClientHandler> ONLINE = new ConcurrentHashMap<>();
-
-    private final Socket socket;
-    private final UserManager userManager;
-    private final RoomManager roomManager;
+//    private static final ConcurrentHashMap<String, ClientHandler> ONLINE = new ConcurrentHashMap<>();
+    private Socket clientSocket;
     private BufferedReader in;
     private PrintWriter out;
+    private UserManager userManager;
+    private RoomManager roomManager;
     private String currentUsername;
+    
+    // Danh sách tất cả client đang online (dùng chung giữa các ClientHandler)
+    private static final ConcurrentHashMap<String, ClientHandler> onlineUsers = new ConcurrentHashMap<>();
 
     public ClientHandler(Socket socket, UserManager userManager, RoomManager roomManager) {
-        this.socket = socket;
+        this.clientSocket = socket;
         this.userManager = userManager;
         this.roomManager = roomManager;
     }
 
     @Override
     public void run() {
+        
         try {
-            in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
-
-            String line;
-            while ((line = in.readLine()) != null) {
-                handleMessage(line);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            System.out.println("Connected to client: " + clientSocket.getInetAddress());
+            String message;
+            while ((message = in.readLine()) != null) {
+                System.out.println("Received message: " + message);
+                handleMessage(message);
             }
 
         } catch (IOException e) {
-            System.out.println("[ClientHandler] Connection closed: " + socket.getInetAddress());
+            System.out.println("Client disconnected: " + clientSocket.getInetAddress());
         } finally {
-            try { socket.close(); } catch (IOException ignored) {}
-            // remove khỏi ONLINE nếu đang đăng nhập
-            if (currentUsername != null) {
-                ONLINE.remove(currentUsername);
-                System.out.println("[Server] Offline: " + currentUsername);
-            }
-        }
-    }
-
-    // Gửi message cho client của chính handler này
-    private void send(String msg) {
-        out.println(msg);
-    }
-
-    // ===== Gửi tới user bất kỳ qua bảng ONLINE (dùng cho broadcast) =====
-    private void sendToUser(String username, String msg) {
-        ClientHandler h = ONLINE.get(username);
-        if (h != null) {
-            h.send(msg);
-        } else {
-            System.out.println("[Server] Cannot send to " + username + " (offline?) -> " + msg);
-        }
-    }
-
-    // ======================== XỬ LÝ CÁC LỆNH ========================
-    private void handleMessage(String msg) {
-        System.out.println("[Server] Received: " + msg);
-
-        // ====== ĐĂNG KÝ ======
-        if (msg.startsWith("REGISTER|")) {
-            String[] parts = msg.split("\\|");
-            if (parts.length == 3) {
-                String username = parts[1];
-                String password = parts[2];
-
-                boolean success = userManager.register(username, password);
-                if (success) {
-                    send("REGISTER_SUCCESS");
-                    System.out.println("[Server] User registered: " + username);
-                } else {
-                    send("REGISTER_FAIL");
-                    System.out.println("[Server] Register failed for: " + username);
-                }
-            } else {
-                send("REGISTER_FAIL|INVALID_FORMAT");
-            }
-
-        // ====== ĐĂNG NHẬP ======
-        } else if (msg.startsWith("LOGIN|")) {
-            String[] parts = msg.split("\\|");
-            if (parts.length == 3) {
-                String username = parts[1];
-                String password = parts[2];
-
-                User user = userManager.login(username, password);
-                if (user != null) {
-                    currentUsername = username;
-                    ONLINE.put(username, this); // <== thêm vào bảng online
-                    send("LOGIN_SUCCESS");
-                    System.out.println("[Server] Login success: " + username);
-                } else {
-                    send("LOGIN_FAIL");
-                    System.out.println("[Server] Login failed: " + username);
-                }
-            } else {
-                send("LOGIN_FAIL|INVALID_FORMAT");
-            }
-
-        // ====== TẠO PHÒNG ======
-        } else if (msg.startsWith("CREATE_ROOM")) {
-            if (currentUsername == null) {
-                send("ERROR|NOT_LOGGED_IN");
-                return;
-            }
-
-            String[] parts = msg.split("\\|");
-            String creator = currentUsername;
-            if (parts.length > 1 && !parts[1].isBlank()) {
-                creator = parts[1];
-            }
-
-            Room room = roomManager.createRoom(creator);
-            if (room != null) {
-                send("ROOM_CREATED|" + room.getId());
-                System.out.println("[Server] " + creator + " created room " + room.getId());
-            } else {
-                send("ERROR|CREATE_ROOM_FAILED");
-                System.out.println("[Server] Failed to create room for " + creator);
-            }
-
-        // ====== THAM GIA PHÒNG ======
-        } else if (msg.startsWith("JOIN_ROOM|")) {
-            if (currentUsername == null) {
-                send("ERROR|NOT_LOGGED_IN");
-                return;
-            }
-
-            String[] parts = msg.split("\\|");
-            if (parts.length < 3) { // JOIN_ROOM|roomId|username
-                send("ERROR|INVALID_FORMAT");
-                return;
-            }
-
-            String roomId = parts[1];
-            String joiner = parts[2];
-
-            Room room = roomManager.joinRoom(roomId, joiner);
-            if (room != null) {
-                // 1) xác nhận cho client vừa join
-                send("ROOM_JOINED|" + room.getId());
-                System.out.println("[Server] " + joiner + " joined room " + roomId);
-
-                // 2) broadcast danh sách người trong phòng (JOINED_ROOM|id|name1,name2)
-                roomManager.broadcastPlayers(room, this::sendToUser);
-
-                // 3) nếu đủ 2 người → auto-start (GAME_STARTED|roomId|youAre|turn|boardSize)
-                roomManager.onPlayerJoined(room, this::sendToUser);
-
-            } else {
-                send("ERROR|JOIN_ROOM_FAILED|" + roomId);
-                System.out.println("[Server] Join room failed: " + roomId);
-            }
-
-        // ====== DANH SÁCH PHÒNG CHỜ ======
-        } else if (msg.equals("LIST_ROOMS")) {
-            List<Room> waitingRooms = roomManager.getWaitingRooms();
-            if (waitingRooms.isEmpty()) {
-                send("ROOM_LIST|EMPTY");
-            } else {
-                StringBuilder sb = new StringBuilder("ROOM_LIST");
-                for (Room room : waitingRooms) {
-                    sb.append("|")
-                      .append(room.getId())
-                      .append(",")
-                      .append(room.getPlayer1())
-                      .append(",")
-                      .append(room.getStatus());
-                }
-                send(sb.toString());
-            }
-
-        // ====== ĐÁNH NƯỚC: MOVE|<roomId>|<x>|<y> ======
-        } else if (msg.startsWith("MOVE|")) {
-            String[] parts = msg.split("\\|");
-            if (parts.length < 4) { send("ERROR|INVALID_MOVE_FORMAT"); return; }
-
-            String roomId = parts[1];   // LƯU Ý: roomId là CHUỖI (VD: 70749A)
-            int x, y;
             try {
-                x = Integer.parseInt(parts[2]);
-                y = Integer.parseInt(parts[3]);
-            } catch (NumberFormatException nfe) {
-                send("ERROR|INVALID_COORD");
-                return;
+                if (clientSocket != null) {
+                    clientSocket.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Error closing socket");
             }
-
-            Room room = roomManager.getRoomById(roomId);
-            if (room == null) {
-                send("ERROR|ROOM_NOT_FOUND|" + roomId);
-                return;
+            
+            // Xóa khỏi danh sách online
+            if (currentUsername != null) {
+                onlineUsers.remove(currentUsername);
+                System.out.println("User offline: " + currentUsername);
             }
-            if (!room.isFull() || !room.isPlaying()) {
-                send("ERROR|ROOM_NOT_PLAYING");
-                return;
-            }
-
-            // Xác định người chơi hiện tại là X hay O
-            char myMark;
-            if (currentUsername != null && currentUsername.equals(room.getPlayer1())) {
-                myMark = 'X';
-            } else if (currentUsername != null && currentUsername.equals(room.getPlayer2())) {
-                myMark = 'O';
-            } else {
-                send("ERROR|NOT_IN_ROOM");
-                return;
-            }
-
-            // Kiểm tra lượt
-            if (room.getTurn() != myMark) {
-                send("ERROR|NOT_YOUR_TURN");
-                return;
-            }
-
-            // Đặt quân nếu ô trống
-            boolean placed = room.placeMark(x, y, myMark);
-            if (!placed) {
-                send("ERROR|CELL_TAKEN");
-                return;
-            }
-
-            // Đổi lượt
-            char nextTurn = (myMark == 'X') ? 'O' : 'X';
-            room.setTurn(nextTurn);
-
-            // Broadcast nước đi
-            String applied = "MOVE_APPLIED|" + roomId + "|" + x + "|" + y + "|" + myMark + "|" + nextTurn;
-            sendToUser(room.getPlayer1(), applied);
-            sendToUser(room.getPlayer2(), applied);
-
-            // ====== THẮNG CUỘC: gửi GAME_OVER ngay lập tức ======
-            if (room.checkWin(x, y, myMark)) {
-                String winnerName = (myMark == 'X') ? room.getPlayer1() : room.getPlayer2();
-                String over = "GAME_OVER|" + roomId + "|" + myMark + "|" + winnerName;
-                sendToUser(room.getPlayer1(), over);
-                sendToUser(room.getPlayer2(), over);
-                room.setStatus("FINISHED");
-            }
-
-        // ====== ĐĂNG XUẤT ======
-        } else if (msg.startsWith("LOGOUT|")) {
-            String[] parts = msg.split("\\|");
-            String user = (parts.length >= 2) ? parts[1] : currentUsername;
-            if (user != null) {
-                ONLINE.remove(user);
-                System.out.println("[Server] Logout: " + user);
-            }
-            send("LOGOUT_OK");
-
-        // ====== LỆNH KHÔNG HỢP LỆ ======
-        } else {
-            send("UNKNOWN_COMMAND");
-            System.out.println("[Server] Unknown command: " + msg);
         }
+    }
+
+    private void sendMessage(String message) {
+        if (out != null) {
+            out.println(message);
+            System.out.println("Sent message: " + message);
+        }
+    }
+
+    private void sendMessageToUser(String username, String message) {
+        ClientHandler handler = onlineUsers.get(username);
+        if (handler != null) {
+            handler.sendMessage(message);
+            System.out.println("Sent message to " + username + ": " + message);
+        } else {
+            System.out.println("Cannot send message to " + username + " (user not online)");
+        }
+    }
+
+    private void handleMessage(String message) {
+
+        if (message.startsWith("REGISTER|")) {
+            handleRegister(message);
+        } else if (message.startsWith("LOGIN|")) {
+            handleLogin(message);
+        } else if (message.startsWith("CREATE_ROOM")) {
+            handleCreateRoom(message);
+        } else if (message.startsWith("JOIN_ROOM|")) {
+            handleJoinRoom(message);
+        } else if (message.equals("LIST_ROOMS")) {
+            handleListRooms();
+        } else if (message.startsWith("MOVE|")) {
+            handleMove(message);
+        } else if (message.startsWith("LOGOUT|")) {
+            handleLogout(message);
+        } else {
+            // Lệnh không hợp lệ
+            sendMessage("UNKNOWN_COMMAND");
+            System.out.println("Lệnh không hợp lệ: " + message);
+        }
+    }
+
+    private void handleRegister(String message) {
+        System.out.println("📝 Xử lý đăng ký...");
+        
+        // Tách thông tin từ tin nhắn (định dạng: REGISTER|username|password)
+        String[] parts = message.split("\\|");
+        
+        // Kiểm tra định dạng tin nhắn
+        if (parts.length == 3) {
+            String username = parts[1];
+            String password = parts[2];
+            
+            // Thử đăng ký tài khoản
+            boolean success = userManager.register(username, password);
+            
+            if (success) {
+                sendMessage("REGISTER_SUCCESS");
+                System.out.println("Registration successful! You can login now.: " + username);
+            } else {
+                sendMessage("REGISTER_FAIL");
+                System.out.println("Registration failed: " + username);
+            }
+        } else {
+            sendMessage("REGISTER_FAIL|INVALID_FORMAT");
+                System.out.println("Invalid registration message format");
+        }
+    }
+
+    private void handleLogin(String message) {        
+        // Tách thông tin từ tin nhắn (định dạng: LOGIN|username|password)
+        String[] parts = message.split("\\|");
+        
+        // Kiểm tra định dạng tin nhắn
+        if (parts.length == 3) {
+            String username = parts[1];
+            String password = parts[2];
+            
+            // Thử đăng nhập
+            User user = userManager.login(username, password);
+            
+            if (user != null) {
+                // Đăng nhập thành công
+                currentUsername = username;
+                onlineUsers.put(username, this);
+                sendMessage("LOGIN_SUCCESS");
+                System.out.println("Login successful: " + username);
+            } else {
+                // Đăng nhập thất bại
+                sendMessage("LOGIN_FAIL");
+                System.out.println("Login failed: " + username);
+            }
+        } else {
+            sendMessage("LOGIN_FAIL|INVALID_FORMAT");
+            System.out.println("Invalid login message format");
+        }
+    }
+
+    private void handleCreateRoom(String message) {        
+        // Kiểm tra xem user đã đăng nhập chưa
+        if (currentUsername == null) {
+            sendMessage("ERROR|NOT_LOGGED_IN");
+            System.out.println("User not logged in");
+            return;
+        }
+
+        // Tạo phòng mới
+        Room room = roomManager.createRoom(currentUsername);
+        
+        if (room != null) {
+            sendMessage("ROOM_CREATED|" + room.getId());
+            System.out.println("Room created successfully: " + room.getId());
+        } else {
+            sendMessage("ERROR|CREATE_ROOM_FAILED");
+            System.out.println("Room creation failed");
+        }
+    }
+
+    private void handleJoinRoom(String message) {        
+        // Kiểm tra xem user đã đăng nhập chưa
+        if (currentUsername == null) {
+            sendMessage("ERROR|NOT_LOGGED_IN");
+            System.out.println("User not logged in");
+            return;
+        }
+
+        // Tách thông tin từ tin nhắn (định dạng: JOIN_ROOM|roomId|joiner)
+        String[] parts = message.split("\\|");
+        if (parts.length < 3) {
+            sendMessage("ERROR|INVALID_FORMAT");
+            System.out.println("Invalid message format");
+            return;
+        }
+
+        String roomId = parts[1];
+        String joiner = parts[2];
+
+        // Thử tham gia phòng
+        Room room = roomManager.joinRoom(roomId, joiner);
+        
+        if (room != null) {
+            sendMessage("ROOM_JOINED|" + room.getId());
+            System.out.println(joiner + " joined room " + roomId);
+
+            // Thông báo cho các player khác
+            roomManager.broadcastPlayers(room, this::sendMessageToUser);
+            roomManager.onPlayerJoined(room, this::sendMessageToUser);
+        } else {
+            sendMessage("ERROR|JOIN_ROOM_FAILED|" + roomId);
+            System.out.println("Room joining failed: " + roomId);
+        }
+    }
+
+    private void handleListRooms() {        
+        // Lấy danh sách phòng đang chờ
+        List<Room> waitingRooms = roomManager.getWaitingRooms();
+        
+        if (waitingRooms.isEmpty()) {
+            sendMessage("ROOM_LIST|EMPTY");
+            System.out.println("No rooms are waiting");
+        } else {
+            // Tạo chuỗi danh sách phòng
+            StringBuilder roomList = new StringBuilder("ROOM_LIST");
+            for (Room room : waitingRooms) {
+                roomList.append("|")
+                       .append(room.getId())
+                       .append(",")
+                       .append(room.getPlayer1())
+                       .append(",")
+                       .append(room.getStatus());
+            }
+            sendMessage(roomList.toString());
+            System.out.println("Sent list of " + waitingRooms.size() + " rooms");
+        }
+    }
+
+    private void handleMove(String message) {        
+        // Tách thông tin từ tin nhắn (định dạng: MOVE|roomId|x|y)
+        String[] parts = message.split("\\|");
+        if (parts.length < 4) {
+            sendMessage("ERROR|INVALID_MOVE_FORMAT");
+            System.out.println("Invalid move format");
+            return;
+        }
+
+        String roomId = parts[1];
+        int x, y;
+        
+        // Chuyển đổi tọa độ từ string sang int
+        try {
+            x = Integer.parseInt(parts[2]);
+            y = Integer.parseInt(parts[3]);
+        } catch (NumberFormatException e) {
+            sendMessage("ERROR|INVALID_COORD");
+            System.out.println("Invalid coordinates");
+            return;
+        }
+
+        // Lấy phòng chơi
+        Room room = roomManager.getRoomById(roomId);
+        if (room == null) {
+            sendMessage("ERROR|ROOM_NOT_FOUND|" + roomId);
+            System.out.println("Room not found: " + roomId);
+            return;
+        }
+        
+        // Kiểm tra phòng có đang chơi không
+        if (!room.isFull() || !room.isPlaying()) {
+            sendMessage("ERROR|ROOM_NOT_PLAYING");
+            System.out.println("Room not ready to play");
+            return;
+        }
+
+        // Xác định ký hiệu của người chơi
+        char myMark;
+        if (currentUsername != null && currentUsername.equals(room.getPlayer1())) {
+            myMark = 'X';
+        } else if (currentUsername != null && currentUsername.equals(room.getPlayer2())) {
+            myMark = 'O';
+        } else {
+            sendMessage("ERROR|NOT_IN_ROOM");
+            System.out.println("You are not in this room");
+            return;
+        }
+
+        // Kiểm tra lượt chơi
+        if (room.getTurn() != myMark) {
+            sendMessage("ERROR|NOT_YOUR_TURN");
+            System.out.println("It's not your turn");
+            return;
+        }
+
+        // Thực hiện nước đi
+        boolean placed = room.placeMark(x, y, myMark);
+        if (!placed) {
+            sendMessage("ERROR|CELL_TAKEN");
+            System.out.println("Cell already taken");
+            return;
+        }
+
+        // Chuyển lượt chơi
+        char nextTurn = (myMark == 'X') ? 'O' : 'X';
+        room.setTurn(nextTurn);
+
+        // Gửi thông báo nước đi cho cả hai người chơi
+        String moveMessage = "MOVE_APPLIED|" + roomId + "|" + x + "|" + y + "|" + myMark + "|" + nextTurn;
+        sendMessageToUser(room.getPlayer1(), moveMessage);
+        sendMessageToUser(room.getPlayer2(), moveMessage);
+
+        // Kiểm tra thắng thua
+        if (room.checkWin(x, y, myMark)) {
+            String winnerName = (myMark == 'X') ? room.getPlayer1() : room.getPlayer2();
+            String gameOverMessage = "GAME_OVER|" + roomId + "|" + myMark + "|" + winnerName;
+            sendMessageToUser(room.getPlayer1(), gameOverMessage);
+            sendMessageToUser(room.getPlayer2(), gameOverMessage);
+            room.setStatus("FINISHED");
+            System.out.println("🏆 " + winnerName + " thắng cuộc!");
+        }
+    }
+
+    private void handleLogout(String message) {
+        System.out.println("👋 Xử lý đăng xuất...");
+        
+        // Tách thông tin từ tin nhắn
+        String[] parts = message.split("\\|");
+        String user = (parts.length >= 2) ? parts[1] : currentUsername;
+        
+        // Xóa khỏi danh sách online
+        if (user != null) {
+            onlineUsers.remove(user);
+            System.out.println("👋 User đăng xuất: " + user);
+        }
+        
+        sendMessage("LOGOUT_OK");
     }
 }
