@@ -120,14 +120,14 @@ public class ClientHandler implements Runnable {
             
             if (success) {
                 sendMessage("REGISTER_SUCCESS");
-                System.out.println("Registration successful! You can login now.: " + username);
+//                System.out.println("Registration successful! You can login now.: " + username);
             } else {
                 sendMessage("REGISTER_FAIL");
-                System.out.println("Registration failed: " + username);
+//                System.out.println("Registration failed: " + username);
             }
         } else {
             sendMessage("REGISTER_FAIL|INVALID_FORMAT");
-                System.out.println("Invalid registration message format");
+//                System.out.println("Invalid registration message format");
         }
     }
 
