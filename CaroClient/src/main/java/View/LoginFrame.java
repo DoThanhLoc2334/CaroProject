@@ -8,10 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 
-/**
- * LoginFrame - Login screen for the Caro game
- * This is a simple class to create the login interface
- */
 public class LoginFrame extends JFrame {
 
     // UI components
@@ -126,23 +122,21 @@ public class LoginFrame extends JFrame {
                 // Login successful
                 JOptionPane.showMessageDialog(this, "Login successful!");
 
-                // Save socket instance and start listening
                 SocketHandle.setInstance(socketHandle);
                 socketHandle.startListening();
 
-                // Move to main screen
+                // Move to Home Page
                 HomePageFrame home = new HomePageFrame(socketHandle, username);
                 GameController.getInstance().attachHome(home);
                 this.dispose(); // Close login screen
-                home.setVisible(true); // Show main screen
+                home.setVisible(true); // Show Home Page
 
             } else {
                 // Login failed
                 JOptionPane.showMessageDialog(this, "Login failed. Please check your username and password.");
             }
         } catch (IOException ex) {
-            // Handle server communication error
-            JOptionPane.showMessageDialog(this, "Error receiving data from server!");
+           ex.printStackTrace();
         }
     }
 

@@ -7,20 +7,11 @@ import java.nio.charset.StandardCharsets;
 // Class quản lý kết nối với server
 public class SocketHandle {
     private static volatile SocketHandle instance;
-
-    // Socket kết nối với server
     private Socket socket;
-    
-    // Để gửi tin nhắn đến server
     private PrintWriter out;
-    
-    // Để đọc tin nhắn từ server
     private BufferedReader in;
-    
-    // Kiểm tra có đang lắng nghe không
     private volatile boolean listening = false;
 
-    // Tạo kết nối với server
     public SocketHandle(String host, int port) throws IOException {
         System.out.println("Connecting to server " + host + ":" + port + "...");
         socket = new Socket(host, port);
@@ -130,7 +121,7 @@ public class SocketHandle {
             System.out.println("Connection closed successfully!");
             
         } catch (IOException e) {
-            System.err.println("Error while closing connection: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

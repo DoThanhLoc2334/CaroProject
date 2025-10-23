@@ -8,7 +8,6 @@ import java.util.function.BiConsumer;
 // Class quản lý các phòng chơi
 public class RoomManager {
     
-    // Danh sách phòng chơi
     private List<Room> rooms = new ArrayList<>();
 
     // Tạo phòng mới

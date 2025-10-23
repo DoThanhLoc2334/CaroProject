@@ -88,7 +88,7 @@ public class RegisterFrame extends JFrame {
                     break;
             }
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Error communicating with server!");
+            ex.printStackTrace();
         }
     }
 
