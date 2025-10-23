@@ -49,22 +49,26 @@ public class UserManager {
         }
     }
 
-    public synchronized boolean register(String username, String password) {
-        if (getUserByName(username) != null) {
+    public synchronized boolean register(String username, String password) 
+    {
+        if (getUserByName(username) != null) 
+        {
             return false; 
         }
         String hash = HashUtil.hashPassword(password);
         users.add(new User(username, hash));
         saveUsers();
-        System.out.println("[UserManager] New user registered: " + username);
+        System.out.println("New user registered: " + username);
         return true;
     }
 
-    public synchronized User login(String username, String password) {
+    public synchronized User login(String username, String password) 
+    {
         User user = getUserByName(username);
-        if (user != null && user.getPasswordHash().equals(HashUtil.hashPassword(password))) {
+        if (user != null && user.getPasswordHash().equals(HashUtil.hashPassword(password))) 
+        {
             user.setOnline(true);
-            System.out.println("[UserManager] " + username + " logged in.");
+            System.out.println(""+ username + " logged in.");
             return user;
         }
         return null;

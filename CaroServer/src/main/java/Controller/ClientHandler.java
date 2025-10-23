@@ -106,57 +106,41 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRegister(String message) {
-        
         // Tách thông tin từ tin nhắn (định dạng: REGISTER|username|password)
         String[] parts = message.split("\\|");
-        
         // Kiểm tra định dạng tin nhắn
         if (parts.length == 3) {
             String username = parts[1];
             String password = parts[2];
-            
-            // Thử đăng ký tài khoản
             boolean success = userManager.register(username, password);
-            
             if (success) {
                 sendMessage("REGISTER_SUCCESS");
-//                System.out.println("Registration successful! You can login now.: " + username);
             } else {
                 sendMessage("REGISTER_FAIL");
-//                System.out.println("Registration failed: " + username);
             }
         } else {
             sendMessage("REGISTER_FAIL|INVALID_FORMAT");
-//                System.out.println("Invalid registration message format");
         }
     }
 
     private void handleLogin(String message) {        
-        // Tách thông tin từ tin nhắn (định dạng: LOGIN|username|password)
         String[] parts = message.split("\\|");
-        
         // Kiểm tra định dạng tin nhắn
         if (parts.length == 3) {
             String username = parts[1];
             String password = parts[2];
-            
-            // Thử đăng nhập
             User user = userManager.login(username, password);
-            
             if (user != null) {
                 // Đăng nhập thành công
                 currentUsername = username;
                 onlineUsers.put(username, this);
                 sendMessage("LOGIN_SUCCESS");
-                System.out.println("Login successful: " + username);
             } else {
                 // Đăng nhập thất bại
                 sendMessage("LOGIN_FAIL");
-                System.out.println("Login failed: " + username);
             }
         } else {
             sendMessage("LOGIN_FAIL|INVALID_FORMAT");
-            System.out.println("Invalid login message format");
         }
     }
 
@@ -164,19 +148,15 @@ public class ClientHandler implements Runnable {
         // Kiểm tra xem user đã đăng nhập chưa
         if (currentUsername == null) {
             sendMessage("ERROR|NOT_LOGGED_IN");
-            System.out.println("User not logged in");
             return;
         }
-
         // Tạo phòng mới
         Room room = roomManager.createRoom(currentUsername);
         
         if (room != null) {
             sendMessage("ROOM_CREATED|" + room.getId());
-            System.out.println("Room created successfully: " + room.getId());
         } else {
             sendMessage("ERROR|CREATE_ROOM_FAILED");
-            System.out.println("Room creation failed");
         }
     }
 

@@ -6,8 +6,6 @@ import java.nio.charset.StandardCharsets;
 
 // Class quản lý kết nối với server
 public class SocketHandle {
-    
-    // Singleton pattern - chỉ có 1 instance
     private static volatile SocketHandle instance;
 
     // Socket kết nối với server
