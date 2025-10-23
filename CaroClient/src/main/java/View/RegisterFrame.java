@@ -99,7 +99,7 @@ public class RegisterFrame extends JFrame {
 
     public static void main(String[] args) {
         try {
-            SocketHandle socketHandle = new SocketHandle("172.20.10.9", 5000);
+            SocketHandle socketHandle = new SocketHandle("localhost", 5000);
             SwingUtilities.invokeLater(() -> new RegisterFrame(socketHandle).setVisible(true));
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Cannot connect to server!");
