@@ -119,13 +119,9 @@ public class LoginFrame extends JFrame {
 
             // Evaluate login result
             if ("LOGIN_SUCCESS".equalsIgnoreCase(response)) {
-                // Login successful
                 JOptionPane.showMessageDialog(this, "Login successful!");
-
                 SocketHandle.setInstance(socketHandle);
                 socketHandle.startListening();
-
-                // Move to Home Page
                 HomePageFrame home = new HomePageFrame(socketHandle, username);
                 GameController.getInstance().attachHome(home);
                 this.dispose(); // Close login screen

@@ -9,11 +9,6 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * ClientHandler - Class xử lý kết nối với từng client
- * Mỗi khi có client kết nối, server sẽ tạo một ClientHandler riêng
- * Class này chạy trong thread riêng để xử lý tin nhắn từ client
- */
 public class ClientHandler implements Runnable {
 
 //    private static final ConcurrentHashMap<String, ClientHandler> ONLINE = new ConcurrentHashMap<>();

@@ -5,7 +5,6 @@ Model\XOButton.class
 View\RegisterFrame.class
 View\RoomManagerFrame.class
 View\HomePageFrame.class
-Controller\ClientHandler.class
 Model\User.class
 View\GameFrame.class
 View\LoginFrame.class
