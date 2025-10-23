@@ -15,7 +15,7 @@ public class RoomManager {
         String roomId = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         // Tạo phòng mới
         Room room = new Room(roomId, creator);
-        // Thêm vào danh sách
+//         Thêm vào danh sách
 //        rooms.add(room);
 //        System.out.println("Room created: " + room);
 //        System.out.println("Total rooms: " + rooms.size());

@@ -83,11 +83,11 @@ public class ClientHandler implements Runnable {
             handleRegister(message);
         } else if (message.startsWith("LOGIN|")) {
             handleLogin(message);
-        } else if (message.startsWith("CREATE_ROOM")) {
+        } else if (message.startsWith("CREATE_ROOM|")) {
             handleCreateRoom(message);
         } else if (message.startsWith("JOIN_ROOM|")) {
             handleJoinRoom(message);
-        } else if (message.equals("LIST_ROOMS")) {
+        } else if (message.equals("LIST_ROOMS") || message.equals("GET_ROOMS")) {
             handleListRooms();
         } else if (message.startsWith("MOVE|")) {
             handleMove(message);
