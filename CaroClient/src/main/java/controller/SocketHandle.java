@@ -24,18 +24,12 @@ public class SocketHandle {
 
     // Tạo kết nối với server
     public SocketHandle(String host, int port) throws IOException {
-        System.out.println("Dang ket noi den server " + host + ":" + port + "...");
-        
-        // Tạo Socket kết nối với server
+        System.out.println("Connecting to server " + host + ":" + port + "...");
         socket = new Socket(host, port);
-        
-        // Tạo PrintWriter để gửi tin nhắn
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF__8));
         
-        // Tạo BufferedReader để đọc tin nhắn
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-        
-        System.out.println("Da ket noi thanh cong den server!");
+        System.out.println("Successfully connected to the server!");
     }
 
     // Lấy instance duy nhất
@@ -44,10 +38,10 @@ public class SocketHandle {
             synchronized (SocketHandle.class) {
                 if (instance == null) {
                     try {
-                        System.out.println("Tao SocketHandle instance moi...");
+                        System.out.println("Creating a new SocketHandle instance...");
                         instance = new SocketHandle("172.20.10.9", 5000);
                     } catch (IOException e) {
-                        System.err.println("Khong the ket noi den server: " + e.getMessage());
+                        System.err.println("Cannot connect to server: " + e.getMessage());
                         throw new RuntimeException("Cannot connect to server", e);
                     }
                 }
@@ -56,55 +50,52 @@ public class SocketHandle {
         return instance;
     }
 
-    // Set instance (dùng cho testing)
     public static void setInstance(SocketHandle sh) {
         instance = sh;
     }
 
-    // Gửi tin nhắn đến server
     public void sendMessage(String msg) {
         if (out != null) {
             out.println(msg);
-            System.out.println("Gui tin nhan den server: " + msg);
+            System.out.println("Sent message to server: " + msg);
         } else {
-            System.err.println("Khong the gui tin nhan - chua ket noi server");
+            System.err.println("Cannot send message - not connected to server");
         }
     }
 
-    // Đọc tin nhắn từ server (blocking)
     public String receiveMessage() throws IOException {
         String msg = in.readLine();
-        System.out.println("Nhan tin nhan tu server: " + msg);
+        System.out.println("Received message from server: " + msg);
         return msg;
     }
 
     // Bắt đầu lắng nghe tin nhắn từ server
     public void startListening() {
         if (listening) {
-            System.out.println("Da dang lang nghe roi!");
+            System.out.println("Already listening!");
             return;
         }
         
         listening = true;
-        System.out.println("Bat dau lang nghe tin nhan tu server...");
+        System.out.println("Starting to listen for messages from server...");
 
         // Tạo Thread mới để lắng nghe tin nhắn
         Thread listenerThread = new Thread(() -> {
-            System.out.println("Thread lang nghe bat dau chay");
+            System.out.println("Listener thread started running");
             
             try {
                 String line;
                 // Vòng lặp đọc tin nhắn từ server
                 while ((line = in.readLine()) != null) {
-                    System.out.println("Nhan tin nhan tu server: " + line);
+                    System.out.println("Received message from server: " + line);
                     // Gửi tin nhắn đến GameController để xử lý
                     GameController.getInstance().onRawMessage(line);
                 }
             } catch (IOException e) {
-                System.err.println("Loi khi lang nghe: " + e.getMessage());
+                System.err.println("Error while listening: " + e.getMessage());
             } finally {
                 listening = false;
-                System.out.println("Dung lang nghe tin nhan");
+                System.out.println("Stopped listening for messages");
             }
         }, "socket-listener");
         
@@ -112,39 +103,35 @@ public class SocketHandle {
         listenerThread.setDaemon(true);
         listenerThread.start();
         
-        System.out.println("Thread lang nghe da duoc khoi dong!");
+        System.out.println("Listener thread has started!");
     }
 
     // Đóng kết nối với server
     public void close() {
-        System.out.println("Dang dong ket noi voi server...");
+        System.out.println("Closing connection to server...");
         
         try {
-            // Flush dữ liệu còn lại
             if (out != null) out.flush();
             
-            // Đóng socket
             if (socket != null && !socket.isClosed()) {
                 socket.close();
-                System.out.println("Da dong socket");
+                System.out.println("Socket closed");
             }
             
-            // Đóng BufferedReader
             if (in != null) {
                 in.close();
-                System.out.println("Da dong BufferedReader");
+                System.out.println("BufferedReader closed");
             }
             
-            // Đóng PrintWriter
             if (out != null) {
                 out.close();
-                System.out.println("Da dong PrintWriter");
+                System.out.println("PrintWriter closed");
             }
             
-            System.out.println("Da dong ket noi thanh cong!");
+            System.out.println("Connection closed successfully!");
             
         } catch (IOException e) {
-            System.err.println("Loi khi dong ket noi: " + e.getMessage());
+            System.err.println("Error while closing connection: " + e.getMessage());
         }
     }
 }

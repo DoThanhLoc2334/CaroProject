@@ -106,7 +106,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRegister(String message) {
-        System.out.println("📝 Xử lý đăng ký...");
         
         // Tách thông tin từ tin nhắn (định dạng: REGISTER|username|password)
         String[] parts = message.split("\\|");
