@@ -28,7 +28,7 @@ public class SocketHandle {
                 if (instance == null) {
                     try {
                         System.out.println("Creating a new SocketHandle instance...");
-                        instance = new SocketHandle("172.20.10.9", 5000);
+                        instance = new SocketHandle("localhost", 5000);
                     } catch (IOException e) {
                         System.err.println("Cannot connect to server: " + e.getMessage());
                         throw new RuntimeException("Cannot connect to server", e);
